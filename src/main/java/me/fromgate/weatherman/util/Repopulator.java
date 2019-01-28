@@ -79,17 +79,17 @@ public class Repopulator {
         } catch (Exception ignored) {
         }
         if (clearBlocks.isEmpty()) {
-            String clearBlockList = "LOG,LOG_2,LEAVES,LEAVES_2,LONG_GRASS,DEAD_BUSH," +
+            String clearBlockList = "LEGACY_LOG,LEGACY_LOG_2,LEGACY_LEAVES,LEGACY_LEAVES_2,LONG_GRASS,DEAD_BUSH," +
                     "YELLOW_FLOWER,RED_ROSE,BROWN_MUSHROOM,RED_MUSHROOM,SNOW,CACTUS," +
                     "SUGAR_CANE_BLOCK,PUMPKIN,HUGE_MUSHROOM_1,HUGE_MUSHROOM_2," +
                     "MELON_BLOCK,VINE,COCOA,PACKED_ICE,WATER_LILY,DOUBLE_PLANT,SNOW";
             Collections.addAll(clearBlocks, clearBlockList.split(","));
         }
         if (treeBlocks.isEmpty()) {
-            treeBlocks.add(Material.LOG.name());
-            treeBlocks.add(Material.LOG_2.name());
-            treeBlocks.add(Material.LEAVES.name());
-            treeBlocks.add(Material.LEAVES_2.name());
+            treeBlocks.add(Material.LEGACY_LOG.name());
+            treeBlocks.add(Material.LEGACY_LOG_2.name());
+            treeBlocks.add(Material.LEGACY_LEAVES.name());
+            treeBlocks.add(Material.LEGACY_LEAVES_2.name());
             treeBlocks.add(Material.VINE.name());
         }
     }
@@ -240,7 +240,7 @@ public class Repopulator {
         Set<Block> blocks = getNaturalBlocks(loc, treesOnly);
         if (blocks.isEmpty()) return false;
         for (Block block : blocks) {
-            block.setTypeId(0, false);
+            block.setType(Material.AIR, false);
         }
         return true;
     }
