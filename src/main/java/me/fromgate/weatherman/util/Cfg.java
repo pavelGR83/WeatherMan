@@ -78,7 +78,7 @@ public class Cfg {
         meltIce = getBoolean("biomes.melt-ice", true);
         meltSnow = getBoolean("biomes.melt-snow", true);
         defaultRadius = getInt("brush.default-radius", 5);
-        String biomeStr = getString("brush.biome.default-biome", "ice_spikes");
+        String biomeStr = getString("brush.biome.default-biome", "iceflats");
         defaultBiome = BiomeTools.isBiomeExists(biomeStr) ? BiomeTools.biomeByName(biomeStr) : Biome.ICE_SPIKES;
         Brush.load(WeatherMan.getPlugin().getConfig());
     }
@@ -137,3 +137,4 @@ public class Cfg {
         return WeatherMan.getPlugin().getConfig().getString(key, defaultValue);
     }
 }
+
