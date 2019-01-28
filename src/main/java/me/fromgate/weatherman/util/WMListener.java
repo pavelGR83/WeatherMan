@@ -215,11 +215,10 @@ public class WMListener implements Listener {
                             sign.update(true);
                         }
                     }
-                } else {
+                } else
                     M.logMessage("Something wrong with WeatherMan-sign: [" + ChatColor.stripColor(sign.getLine(0)) + "|" + ChatColor.stripColor(sign.getLine(1)) +
                             "|" + ChatColor.stripColor(sign.getLine(2)) + "|" + ChatColor.stripColor(sign.getLine(3)) +
                             "] " + event.getBlock().getLocation().toString());
-                }
             }
         }
     }
@@ -269,3 +268,4 @@ public class WMListener implements Listener {
     }
 
 }
+
