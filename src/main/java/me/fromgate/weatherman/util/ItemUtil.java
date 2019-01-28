@@ -29,7 +29,6 @@ import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemFactory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
@@ -47,54 +46,52 @@ public class ItemUtil {
     }
 
 
-    public static ItemStack parseItemStack(String itemStr) {
-        ItemFactory itemFactory = Bukkit.getItemFactory();
+    @SuppressWarnings("deprecation")
+    public static ItemStack parseItemStack(String itemstr) {
+        if (itemstr.isEmpty()) return null;
 
-        if (itemStr.isEmpty()) return null;
-
-        String itemAmountStr = itemStr;
-        String enchantStr = "";
+        String istr = itemstr;
+        String enchant = "";
         String name = "";
 
-        if (itemAmountStr.contains("$")) {
-            name = itemAmountStr.substring(0, itemAmountStr.indexOf("$"));
-            itemAmountStr = itemAmountStr.substring(name.length() + 1);
+        if (istr.contains("$")) {
+            name = istr.substring(0, istr.indexOf("$"));
+            istr = istr.substring(name.length() + 1);
         }
-        if (itemAmountStr.contains("@")) {
-            enchantStr = itemAmountStr.substring(itemAmountStr.indexOf("@") + 1);
-            itemAmountStr = itemAmountStr.substring(0, itemAmountStr.indexOf("@"));
+        if (istr.contains("@")) {
+            enchant = istr.substring(istr.indexOf("@") + 1);
+            istr = istr.substring(0, istr.indexOf("@"));
         }
+        int id = -1;
         int amount = 1;
-
-        String[] si = itemAmountStr.split("\\*");
+        short data = 0;
+        String[] si = istr.split("\\*");
 
         if (si.length > 0) {
             if (si.length == 2) amount = Math.max(getMinMaxRandom(si[1]), 1);
-            String materialStr = si[0];
-            if (materialStr.contains(":") || materialStr.matches("\\d+")) {
-                throw new IllegalStateException("Numerical id/data are not supported. Please update your item definition: " + itemStr);
+            String ti[] = si[0].split(":");
+            if (ti.length > 0) {
+                if (ti[0].matches("[0-9]*")) id = Integer.parseInt(ti[0]);
+                else {
+                    Material m = Material.getMaterial(ti[0].toUpperCase());
+                    if (m == null) {
+                        //logOnce("wrongitem"+ti[0], "Could not parse item material name (id) "+ti[0]);
+                        return null;
+                    }
+                    id = m.getId();
+                }
+                if ((ti.length == 2) && (ti[1]).matches("[0-9]*")) data = Short.parseShort(ti[1]);
+                ItemStack item = new ItemStack(Material.DIAMOND);
+                if (!enchant.isEmpty()) {
+                    item = setEnchantments(item, enchant);
+                }
+                if (!name.isEmpty()) {
+                    ItemMeta im = item.getItemMeta();
+                    im.setDisplayName(ChatColor.translateAlternateColorCodes('&', name.replace("_", " ")));
+                    item.setItemMeta(im);
+                }
+                return item;
             }
-
-            Material material = Material.getMaterial(materialStr.toUpperCase());
-            if (material == null) {
-                material = Material.getMaterial(materialStr.toUpperCase(), true);
-            }
-
-            if (material == null) {
-                //logOnce("wrongitem"+ti[0], "Could not parse item material name (id) "+ti[0]);
-                return null;
-            }
-
-            ItemStack item = new ItemStack(material, amount);
-            if (!enchantStr.isEmpty()) {
-                item = setEnchantments(item, enchantStr);
-            }
-            if (!name.isEmpty()) {
-                ItemMeta im = item.getItemMeta();
-                im.setDisplayName(ChatColor.translateAlternateColorCodes('&', name.replace("_", " ")));
-                item.setItemMeta(im);
-            }
-            return item;
         }
         return null;
     }
@@ -145,45 +142,42 @@ public class ItemUtil {
 
 
     @SuppressWarnings("deprecation")
-    public static boolean compareItemStr(ItemStack item, String itemStr) {
-        String itemAmountStr = itemStr;
+    public static boolean compareItemStr(ItemStack item, String str) {
+        String itemstr = str;
         String name = "";
-        if (itemAmountStr.contains("$")) {
-            name = itemStr.substring(0, itemAmountStr.indexOf("$"));
+        if (itemstr.contains("$")) {
+            name = str.substring(0, itemstr.indexOf("$"));
             name = ChatColor.translateAlternateColorCodes('&', name.replace("_", " "));
-            itemAmountStr = itemStr.substring(name.length() + 1);
+            itemstr = str.substring(name.length() + 1);
         }
-        if (itemAmountStr.isEmpty()) return false;
+        if (itemstr.isEmpty()) return false;
         if (!name.isEmpty()) {
-            String itemName = item.hasItemMeta() ? item.getItemMeta().getDisplayName() : "";
-            if (!name.equals(itemName)) return false;
+            String iname = item.hasItemMeta() ? item.getItemMeta().getDisplayName() : "";
+            if (!name.equals(iname)) return false;
         }
-        return compareItemStrIgnoreName(item.getType(), item.getAmount(), itemAmountStr); // ;compareItemStr(item, itemstr);
+        return compareItemStrIgnoreName(Integer.parseInt(item.getType().name()), item.getDurability(), item.getAmount(), itemstr); // ;compareItemStr(item, itemstr);
     }
 
+    @SuppressWarnings("deprecation")
     public static boolean compareItemStrIgnoreName(ItemStack itemStack, String itemstr) {
-        return compareItemStrIgnoreName(itemStack.getType(), itemStack.getAmount(), itemstr);
+        return compareItemStrIgnoreName(Integer.parseInt(itemStack.getType().name()), itemStack.getDurability(), itemStack.getAmount(), itemstr);
     }
 
-    public static boolean compareItemStrIgnoreName(Material material, int item_amount, String itemStr) {
-        if (!itemStr.isEmpty()) {
-
+    @SuppressWarnings("deprecation")
+    public static boolean compareItemStrIgnoreName(int item_id, int item_data, int item_amount, String itemstr) {
+        if (!itemstr.isEmpty()) {
+            int id = -1;
             int amount = 1;
-            String[] si = itemStr.split("\\*");
+            int data = -1;
+            String[] si = itemstr.split("\\*");
             if (si.length > 0) {
-                if ((si.length == 2) && si[1].matches("[1-9]+[0-9]*")) {
-                    amount = Integer.parseInt(si[1]);
-                }
-                String materialStr = si[0].toUpperCase();
-                if (materialStr.contains(":")||materialStr.matches("\\d+")) {
-                    throw new IllegalStateException("Numerical id/data are not supported. Please update your item definition: " + itemStr);
-                }
-                Material id = Material.getMaterial(materialStr);
-                if (id == null) {
-                    id = Material.getMaterial(materialStr, true);
-                }
-                if (id != null) {
-                    return ((material.equals(id)) && (item_amount >= amount));
+                if ((si.length == 2) && si[1].matches("[1-9]+[0-9]*")) amount = Integer.parseInt(si[1]);
+                String ti[] = si[0].split(":");
+                if (ti.length > 0) {
+                    if (ti[0].matches("[0-9]*")) id = Integer.parseInt(ti[0]);
+                    else id = Material.getMaterial(ti[0]).getId();
+                    if ((ti.length == 2) && (ti[1]).matches("[0-9]*")) data = Integer.parseInt(ti[1]);
+                    return ((item_id == id) && ((data < 0) || (item_data == data)) && (item_amount >= amount));
                 }
             }
         }
@@ -245,42 +239,39 @@ public class ItemUtil {
         return false;
     }
 
-    public static boolean removeItemInHand(Player player, String itemStr) {
+    @SuppressWarnings("deprecation")
+    public static boolean removeItemInHand(Player player, String istr) {
         ItemStack slot = player.getItemInHand();
         if (slot == null || slot.getType() == Material.AIR) return false;
-        String itemAmountStr = itemStr;
+        String itemstr = istr;
         int amount = 1;
+        int id = -1;
+        int data = -1;
         String name = "";
 
-        if (itemAmountStr.contains("$")) {
-            name = itemAmountStr.substring(0, itemAmountStr.indexOf("$"));
-            itemAmountStr = itemAmountStr.substring(name.length() + 1);
+        if (itemstr.contains("$")) {
+            name = itemstr.substring(0, itemstr.indexOf("$"));
+            itemstr = itemstr.substring(name.length() + 1);
         }
 
-        String[] si = itemAmountStr.split("\\*");
+        String[] si = itemstr.split("\\*");
         if (si.length == 0) return false;
-        if ((si.length == 2) && si[1].matches("[1-9]+[0-9]*")) {
-            amount = Integer.parseInt(si[1]);
+        if ((si.length == 2) && si[1].matches("[1-9]+[0-9]*")) amount = Integer.parseInt(si[1]);
+        String ti[] = si[0].split(":");
+
+        if (ti.length > 0) {
+            if (ti[0].matches("[0-9]*")) id = Integer.parseInt(ti[0]);
+            else id = Material.getMaterial(ti[0]).getId();
+            if ((ti.length == 2) && (ti[1]).matches("[0-9]*")) data = Integer.parseInt(ti[1]);
         }
-
-
-        String materialStr = si[0];
-
-        if (materialStr.contains(":") || materialStr.matches("\\d+")) {
-            throw new IllegalStateException("Numerical id/data are not supported. Please update your item definition: " + itemStr);
-        }
-
-        Material material = Material.getMaterial(materialStr);
-        if (material == null) {
-            material = Material.getMaterial(materialStr, true);
-        }
-
+        if (id <= 0) return false;
         if (!compareItemName(slot, name)) return false;
-        if (!material.equals(slot.getType())) return false;
-        int slotAmount = slot.getAmount();
-        if (slotAmount < amount) return false;
-        if (slotAmount == amount) slot.setType(Material.AIR);
-        else slot.setAmount(slotAmount - amount);
+        if (id != (Integer.parseInt(slot.getType().name()))) return false;
+        if ((data > 0) && (data != slot.getDurability())) return false;
+        int slotamount = slot.getAmount();
+        if (slotamount < amount) return false;
+        if (slotamount == amount) slot.setType(Material.AIR);
+        else slot.setAmount(slotamount - amount);
         return true;
     }
 
@@ -290,40 +281,35 @@ public class ItemUtil {
 
 
     @SuppressWarnings("deprecation")
-    public static int removeItemInInventory(Inventory inv, String itemStr, int amount) {
-        String itemAmountStr = itemStr;
+    public static int removeItemInInventory(Inventory inv, String istr, int amount) {
+        String itemstr = istr;
         int left = 1;
+        int id = -1;
+        int data = -1;
         String name = "";
 
-        if (itemAmountStr.contains("$")) {
-            name = itemAmountStr.substring(0, itemAmountStr.indexOf("$"));
-            itemAmountStr = itemAmountStr.substring(name.length() + 1);
+        if (itemstr.contains("$")) {
+            name = itemstr.substring(0, itemstr.indexOf("$"));
+            itemstr = itemstr.substring(name.length() + 1);
         }
 
-        String[] si = itemAmountStr.split("\\*");
+        String[] si = itemstr.split("\\*");
         if (si.length == 0) return left;
         if ((si.length == 2) && si[1].matches("[1-9]+[0-9]*")) left = (amount < 1 ? Integer.parseInt(si[1]) : amount);
+        String ti[] = si[0].split(":");
 
-        String materialStr = si[0].toUpperCase();
-
-        if (materialStr.contains(":") || materialStr.matches("\\d+")) {
-            throw new IllegalStateException("Numerical id/data are not supported. Please update your item definition: " + itemStr);
+        if (ti.length > 0) {
+            if (ti[0].matches("[0-9]*")) id = Integer.parseInt(ti[0]);
+            else id = Material.getMaterial(ti[0]).getId();
+            if ((ti.length == 2) && (ti[1]).matches("[0-9]*")) data = Integer.parseInt(ti[1]);
         }
-
-        Material material = Material.getMaterial(materialStr);
-        if (material == null) {
-            material = Material.getMaterial(materialStr, true);
-        }
-
-        if (material == null) {
-            return left;
-        }
-
+        if (id <= 0) return left;
         for (int i = 0; i < inv.getContents().length; i++) {
             ItemStack slot = inv.getItem(i);
             if (slot == null) continue;
             if (!compareItemName(slot, name)) continue;
-            if (!material.equals(slot.getType())) continue;
+            if (id != (Integer.parseInt(slot.getType().name()))) continue;
+            if ((data > 0) && (data != slot.getDurability())) continue;
             int slotamount = slot.getAmount();
             if (slotamount == 0) continue;
             if (slotamount <= left) {
@@ -339,46 +325,46 @@ public class ItemUtil {
     }
 
 
-    public static int countItemInInventory(Inventory inv, String itemStr) {
-        String itemAmountStr = itemStr;
+    @SuppressWarnings("deprecation")
+    public static int countItemInInventory(Inventory inv, String istr) {
+        String itemstr = istr;
         int count = 0;
+        int id = -1;
+        int data = -1;
         String name = "";
-        if (itemAmountStr.contains("$")) {
-            name = itemAmountStr.substring(0, itemAmountStr.indexOf("$"));
-            itemAmountStr = itemAmountStr.substring(name.length() + 1);
+        if (itemstr.contains("$")) {
+            name = itemstr.substring(0, itemstr.indexOf("$"));
+            itemstr = itemstr.substring(name.length() + 1);
         }
 
-        String[] si = itemAmountStr.split("\\*");
+        String[] si = itemstr.split("\\*");
         if (si.length == 0) return 0;
 
-        String materialStr = si[0].toUpperCase();
-
-        if (materialStr.contains(":") || materialStr.matches("\\d+")) {
-            throw new IllegalStateException("Numerical id/data are not supported. Please update your item definition: " + itemStr);
+        String ti[] = si[0].split(":");
+        if (ti.length > 0) {
+            try {
+                if (ti[0].matches("[0-9]*")) id = Integer.parseInt(ti[0]);
+                else id = Material.getMaterial(ti[0].toUpperCase()).getId();
+            } catch (Exception e) {
+                return 0;
+            }
+            if ((ti.length == 2) && (ti[1]).matches("[0-9]*")) data = Integer.parseInt(ti[1]);
         }
-
-        Material material = Material.getMaterial(materialStr);
-        if (material == null) {
-            material = Material.getMaterial(materialStr, true);
-        }
-
-        if (material == null) {
-            return 0;
-        }
+        if (id <= 0) return 0;
 
         for (ItemStack slot : inv.getContents()) {
             if (slot == null) continue;
             if (!compareItemName(slot, name)) continue;
-            if (material.equals(slot.getType())) {
-                count += slot.getAmount();
+            if (id == (Integer.parseInt(slot.getType().name()))) {
+                if ((data < 0) || (data == slot.getDurability())) count += slot.getAmount();
             }
         }
         return count;
     }
 
-    public static void giveItemOrDrop(Player player, ItemStack itemStack) {
-        for (ItemStack i : player.getInventory().addItem(itemStack).values())
-            player.getWorld().dropItemNaturally(player.getLocation(), i);
+    public static void giveItemOrDrop(Player p, ItemStack item) {
+        for (ItemStack i : p.getInventory().addItem(item).values())
+            p.getWorld().dropItemNaturally(p.getLocation(), i);
     }
 
     public static int getMinMaxRandom(String minMaxStr) {
