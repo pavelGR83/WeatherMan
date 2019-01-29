@@ -75,7 +75,7 @@ public class UpdateChecker {
         setUpdateMessage(new ArrayList<>());
         if (enableUpdateChecker) {
             updateMsg();
-            Bukkit.getScheduler().runTaskTimerAsynchronously(pluginInstance, UpdateChecker::updateMsg, (40 + (new Random()).nextInt(20)) * 1200, 60 * 1200);
+            Bukkit.getScheduler().runTaskTimerAsynchronously(pluginInstance, (Runnable) UpdateChecker::updateMsg, (40 + (new Random()).nextInt(20) * 1200), 60 * 1200);
         }
     }
 
